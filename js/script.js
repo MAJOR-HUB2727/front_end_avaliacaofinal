@@ -57,35 +57,16 @@ function carregarEstilos() {
     });
 }
 
-// function carregarEstilos(){
-//     fetch('http://localhost:3000/estilo', {
-//             method: 'GET',
-//             headers: {
-//                 'Content-type': 'application/json'
-//             },
-//             mode: 'cors',
-//         }).then((response) => response.json() )
-//         .then((data) => {
-//             // console.log(data)
-//             estilos = data // recebe a lista de academias do back
-//             atualizarEstilo()
-//         }).catch((error) => {
-//             console.log(error)
-//             alert("Erro ao listar estilos")
-//         })
-// }
-
 // Função para atualizar a lista de estilos no formulário de cadastro/alteração
 function atualizarListaEstilos() {
-    const selectEstilo = document.getElementById("estilo");
-    selectEstilo.innerHTML = ""; // Limpa as opções anteriores
-
-    estilos.forEach(estilo => {
+    let listaEstilo = document.getElementById("estilo");
+    for(let i = 0; i < estilos.length; i++){
+        let estilo = estilos[i];
         let option = document.createElement("option");
         option.value = estilo.id;
         option.innerHTML = estilo.nome;
-        selectEstilo.appendChild(option);
-    });
+        listaEstilo.appendChild(option);
+    }
 }
 
 // Função para salvar o estilo
@@ -142,26 +123,21 @@ function alterar(cpf) {
     for (let i = 0; i < clientes.length; i++) {
         let cliente = clientes[i]
         if (cliente.cpf == cpf) {
-            
-            document.getElementById('cpf').value = cliente.cpf
+
+            // preenche os campos do formulário
             document.getElementById('nome').value = cliente.nome
+            document.getElementById('cpf').value = cliente.cpf
             document.getElementById('peso').value = cliente.peso
             document.getElementById('altura').value = cliente.altura
             document.getElementById('idade').value = cliente.idade
-            document.getElementById('estilo').value = cliente.estilo.id
+            document.getElementById('estilo').value = cliente.style.id
             document.getElementById("academia").value = cliente.gym.id
-
+            
             clienteAlterado = cliente // guarda o cliente que esta sendo alterado
+            console.log(clienteAlterado, cliente)
             mostrarModal()
         }
     }
-
-
-
-
-
-    
-    //carregarClientes()
 
     atualizarLista()
 }
@@ -185,9 +161,8 @@ function excluir(cpf) {
 
 function salvar() {
 
-    
-    let nome = document.getElementById("nome").value
     let cpf = document.getElementById('cpf').value
+    let nome = document.getElementById("nome").value
     let peso = document.getElementById('peso').value
     let altura = document.getElementById('altura').value
     let idade = document.getElementById('idade').value
@@ -201,11 +176,13 @@ function salvar() {
         nome: nome,
         peso: peso,
         altura: altura,
-        idade: Number(idade),
+        idade: idade,
         idEstilo: idEstilo, // Converte para número
-        idAcademia: Number(idAcademia), // Converte para número
+        idAcademia: idAcademia, 
+
         
     }
+    console.log(novoBodyBuilder) // Verifica o objeto criado
 
     // Se o clienteAlterado == null, esta adicionando um novo cliente
     if (clienteAlterado == null) {
@@ -214,12 +191,11 @@ function salvar() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(novoBodyBuilder)
           })
-          .then(response => response.json())
-          .then(data => {
-            clientes.push(data); // Adiciona o cliente recém-criado à lista
-            atualizarLista(); // Atualiza a tabela
-          })
-          .catch(error => alert("Erro ao cadastrar"));
+          .then(() => {
+            alert("Cadastrado com sucesso")
+        }).catch((error) => {
+            alert("Erro ao cadastrar")
+        })
           
     } else { // Senão está alterando um cliente
         fetch('http://localhost:3000/body-builder/' + clienteAlterado.cpf, {
@@ -229,11 +205,11 @@ function salvar() {
             },
             mode: 'cors',
             body: JSON.stringify(novoBodyBuilder)
-        }).then( () => {
+        }).then(() => {
+            console.log(novoBodyBuilder);
             alert("Alterado com sucesso")
-            carregarClientes()
         }).catch((error) => {
-            alert("Erro ao Alterar")
+            alert("Erro ao alterar")
         })
     }
 
@@ -247,28 +223,18 @@ function salvar() {
 }
 
 function limparFormulario() {
-    document.getElementById('nome').value = ""
     document.getElementById('cpf').value = ""
+    document.getElementById('nome').value = ""
     document.getElementById('peso').value = ""
     document.getElementById('altura').value = ""
     document.getElementById('idade').value = ""
     document.getElementById('estilo').value = ""
+    document.getElementById("academia").value = ""
 }
 
 function atualizarLista() {
     let tbody = document.getElementsByTagName('tbody')[0] //pega o primeiro tbody da página
     tbody.innerHTML = "" //limpa as linhas da tabela
-
-    // clientes.sort((a, b) => a.nome.localeCompare(b.nome));
-    // clientes.sort((a, b) => a.cpf.localeCompare(b.cpf));
-    // clientes.sort((a, b) => a.peso.localeCompare(b.peso));
-    // clientes.sort((a, b) => a.altura.localeCompare(b.altura));
-    // clientes.sort((a, b) => a.dataNascimento.localeCompare(b.dataNascimento));
-    // clientes.sort((a, b) => a.cidadeNascimento.localeCompare(b.cidadeNascimento));
-    // clientes.sort((a, b) => a.idade.localeCompare(b.idade));
-
-    //for(let i = 0; i < clientes.length; i++) {
-    //    let cliente = clientes[i]
     clientes.forEach(cliente => {
        let linhaTabela = document.createElement('tr')
        linhaTabela.innerHTML = `
@@ -278,7 +244,8 @@ function atualizarLista() {
             <td>${cliente.peso} Kg</td>
             <td>${cliente.altura} M</td>
             <td>${cliente.idade}</td>
-            <td>${cliente.estilo}</td>
+            <td>${cliente.style.nome}</td>
+            
             <td>
                 <button onclick="alterar('${cliente.cpf}')">Alterar</button>
                 <button onclick="excluir('${cliente.cpf}')">Excluir</button>
@@ -331,18 +298,5 @@ function atualizarListaAcademias(){
         option.value = academia.id
         option.innerHTML = academia.nome
         listaAcademia.appendChild(option)
-    }
-}
-
-
-
-function atualizarListaEstilos(){
-    let listaEStilo = document.getElementById("estilo")
-    for(let i = 0; i < estilos.length; i++){
-        let estilo = estilos[i]
-        let option = document.createElement("option")
-        option.value = estilo.id
-        option.innerHTML = estilo.nome
-        listaEStilo.appendChild(option)
     }
 }
