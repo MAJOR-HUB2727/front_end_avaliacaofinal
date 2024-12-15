@@ -72,6 +72,7 @@ function atualizarListaEstilos() {
 // Função para salvar o estilo
 function salvarEstilo() {
     const nomeEstilo = document.getElementById("nomeEstilo").value;
+    console.log('Nome do estilo:', nomeEstilo); // Adicionando log para verificar o valor
     
     fetch('http://localhost:3000/estilo', {
         method: 'POST',
@@ -93,6 +94,7 @@ function salvarEstilo() {
 
     return false; // Previne o envio do formulário
 }
+
 
 // Função chamada sempre que o usuário digitar algo na caixa de busca
 function buscarClientes() {
