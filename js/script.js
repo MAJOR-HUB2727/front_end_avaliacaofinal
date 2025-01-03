@@ -10,6 +10,10 @@ var estilos = []
 //guarda o cliente que está sendo alterado
 var clienteAlterado = null
 
+// Atribuição de variáveis
+var idEstilo = 0
+var novoEstilo = "" 
+
 function mostrarModal() {
     const modal = document.getElementById('modal')
     modal.style.display = "block"
@@ -40,7 +44,7 @@ function adicionar() {
 
 // Função para carregar os estilos
 function carregarEstilos() {
-    fetch('http://localhost:3000/estilo', {
+    fetch('http://localhost:3000/style', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -69,33 +73,6 @@ function atualizarListaEstilos() {
     }
 }
 
-// Função para salvar o estilo
-function salvarEstilo() {
-    const nomeEstilo = document.getElementById("nomeEstilo").value;
-    console.log('Nome do estilo:', nomeEstilo); // Adicionando log para verificar o valor
-    
-    fetch('http://localhost:3000/estilo', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        mode: 'cors',
-        body: JSON.stringify({ nome: nomeEstilo }),
-    })
-    .then(response => response.text())
-    .then(data => {
-        alert(data);
-        carregarEstilos(); // Recarregar a lista de estilos
-        ocultarModalEstilo();
-    })
-    .catch(error => {
-        console.error('Erro ao salvar estilo:', error);
-    });
-
-    return false; // Previne o envio do formulário
-}
-
-
 // Função chamada sempre que o usuário digitar algo na caixa de busca
 function buscarClientes() {
     const searchQuery = document.getElementById("searchBox").value.trim().toLowerCase();
@@ -119,13 +96,12 @@ function buscarClientes() {
     });
 }
 
-
 function alterar(cpf) {
     //busca o cliente que será alterado
     for (let i = 0; i < clientes.length; i++) {
         let cliente = clientes[i]
         if (cliente.cpf == cpf) {
-
+            console.log("Dados do Body Builder antes da alteração", cliente)
             // preenche os campos do formulário
             document.getElementById('nome').value = cliente.nome
             document.getElementById('cpf').value = cliente.cpf
@@ -133,14 +109,13 @@ function alterar(cpf) {
             document.getElementById('altura').value = cliente.altura
             document.getElementById('idade').value = cliente.idade
             document.getElementById('estilo').value = cliente.style.id
+            // document.getAnimations("estilo-input").value = cliente.style.id  // **acrescentei esta linha
             document.getElementById("academia").value = cliente.gym.id
-            
+
             clienteAlterado = cliente // guarda o cliente que esta sendo alterado
-            console.log(clienteAlterado, cliente)
             mostrarModal()
         }
     }
-
     atualizarLista()
 }
 
@@ -162,29 +137,52 @@ function excluir(cpf) {
 }
 
 function salvar() {
-
     let cpf = document.getElementById('cpf').value
     let nome = document.getElementById("nome").value
     let peso = document.getElementById('peso').value
     let altura = document.getElementById('altura').value
     let idade = document.getElementById('idade').value
-    let idEstilo = document.getElementById('estilo').value
+ 
+    // Verifica se o usuário selecionou um estilo no dropdown ou digitou um novo
+    let idEstilo = document.getElementById('estilo').value;
+    let novoEstilo = document.getElementById('estilo-input').value;
+
     let idAcademia = document.getElementById("academia").value
-    console.log('Estilo selecionado:', idEstilo, idAcademia);
+
+  if (novoEstilo) {
+        fetch('http://localhost:3000/style', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify( {novoEstilo} ), // Envia o estilo digitado
+        })
+            .then(data => {
+                console.log("Ultimo estilo cadastrado e seu id", data.id);
+                alert(`Estilo cadastrado com sucesso! ID: ${data.id}`);
+            })
+            .catch(error => {
+                console.error("Erro na requisição:", error);
+                alert("Erro ao cadastrar o estilo. Tente novamente.");
+            });
+    }
+ 
+    if(novoEstilo) {
+        atualizarListaEstilos()
+        carregarEstilos()
+        ocultarModal()
+        
+       // Pegando o último ID
+        idEstilo = estilos.length > 0 ? estilos[estilos.length - 1].id + 1 : null;
+    }
 
     let novoBodyBuilder = {
-        
         cpf: cpf,
         nome: nome,
         peso: peso,
         altura: altura,
         idade: idade,
-        idEstilo: idEstilo, // Converte para número
-        idAcademia: idAcademia, 
-
-        
+        idEstilo: parseInt(idEstilo), // Converte para número
+        idAcademia: parseInt(idAcademia), 
     }
-    console.log(novoBodyBuilder) // Verifica o objeto criado
 
     // Se o clienteAlterado == null, esta adicionando um novo cliente
     if (clienteAlterado == null) {
@@ -208,18 +206,14 @@ function salvar() {
             mode: 'cors',
             body: JSON.stringify(novoBodyBuilder)
         }).then(() => {
-            console.log(novoBodyBuilder);
+            console.log("Dados Body Builder ALTERADO" , novoBodyBuilder);
             alert("Alterado com sucesso")
         }).catch((error) => {
             alert("Erro ao alterar")
         })
     }
-
-
     ocultarModal()
-
     limparFormulario()
-
     carregarClientes()
     return false
 }
@@ -231,6 +225,7 @@ function limparFormulario() {
     document.getElementById('altura').value = ""
     document.getElementById('idade').value = ""
     document.getElementById('estilo').value = ""
+    document.getElementById("estilo-input").value = ""
     document.getElementById("academia").value = ""
 }
 
@@ -247,16 +242,15 @@ function atualizarLista() {
             <td>${cliente.altura} M</td>
             <td>${cliente.idade}</td>
             <td>${cliente.style.nome}</td>
-            
             <td>
                 <button onclick="alterar('${cliente.cpf}')">Alterar</button>
                 <button onclick="excluir('${cliente.cpf}')">Excluir</button>
             </td>
         `
         tbody.appendChild(linhaTabela);
-    //}
 })
 }
+
 function carregarClientes(){
     fetch('http://localhost:3000/body-builder', {
             method: 'GET',
@@ -274,6 +268,7 @@ function carregarClientes(){
             alert("Erro ao listar clientes")
         })
 }
+
 function carregarAcademias(){
     fetch('http://localhost:3000/gym', {
             method: 'GET',
@@ -301,4 +296,65 @@ function atualizarListaAcademias(){
         option.innerHTML = academia.nome
         listaAcademia.appendChild(option)
     }
+}
+
+// Função para carregar os estilos
+function carregarEstilos(){
+    fetch('http://localhost:3000/style', {
+            method: 'GET',
+            headers: {
+                'Content-type': 'application/json'
+            },
+            mode: 'cors',
+        }).then((response) => response.json() )
+        .then((data) => {
+            // console.log(data)
+            estilos = data // recebe a lista de estilos do back
+            atualizarListaEstilos()
+            // console.log("Dados recebidos do Back end", estilos)
+
+            
+        }).catch((error) => {
+            console.log(error)
+            alert("Erro ao listar estilos")
+        })
+}
+
+// Função para atualizar a lista de estilos no formulário de cadastro/alteração
+function atualizarListaEstilos() {
+    let listaEstilo = document.getElementById("estilo");
+    listaEstilo.innerHTML = ""; // Limpa a lista atual
+    for(let i = 0; i < estilos.length; i++){
+        let estilo = estilos[i];
+        let option = document.createElement("option");
+        option.value = estilo.id;
+        option.innerHTML = estilo.nome;
+        listaEstilo.appendChild(option);
+    }
+}
+
+// Função para salvar o estilo
+function salvarEstilo() {
+    //const novoEstilo = document.getElementById("estilo-input").value;
+    console.log('Nome do estilo:', novoEstilo); // Adicionando log para verificar o valor
+    
+    fetch('http://localhost:3000/style', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        mode: 'cors',
+        body: JSON.stringify( novoEstilo ),
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Estilo Salvo", data);
+        carregarEstilos(); // Recarregar a lista de estilos
+        ocultarModalEstilo();
+    })
+    .catch(error => {
+        console.error('Erro ao salvar estilo:', error);
+    });
+
+    return false; // Previne o envio do formulário
 }
